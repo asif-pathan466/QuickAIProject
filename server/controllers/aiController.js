@@ -4,8 +4,6 @@ import { clerkClient } from "@clerk/express";
 import axios from "axios";
 import { v2 as cloudinary } from "cloudinary";
 import FormData from "form-data";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 import pdf from 'pdf-parse-fork'
 
 const AI = new OpenAI({
@@ -23,13 +21,13 @@ export const generateArticle = async (req, res) => {
 
     const plan = req.plan;
     const free_usage = req.free_usage ?? 0;
-    //  && free_usage >= 10
+    //  && free_usage >= 10
 
     // if (plan !== "premium") {
-    //   return res.json({
-    //     success: false,
-    //     message: "Limit reached. Upgrade to continue.",
-    //   });
+    //   return res.json({
+    //     success: false,
+    //     message: "Limit reached. Upgrade to continue.",
+    //   });
     // }
 
     const response = await AI.chat.completions.create({
@@ -42,9 +40,9 @@ export const generateArticle = async (req, res) => {
     const content = response.choices?.[0]?.message?.content || "";
 
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, ${prompt}, ${content}, 'article')
-    `;
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, ${prompt}, ${content}, 'article')
+    `;
 
     if (plan !== "premium") {
       await clerkClient.users.updateUserMetadata(userId, {
@@ -69,13 +67,13 @@ export const generateBlogTitle = async (req, res) => {
 
     const plan = req.plan;
     const free_usage = req.free_usage ?? 0;
-    //  && free_usage >= 10
+    //  && free_usage >= 10
 
     // if (plan !== "premium") {
-    //   return res.json({
-    //     success: false,
-    //     message: "Limit reached. Upgrade to continue.",
-    //   });
+    //   return res.json({
+    //     success: false,
+    //     message: "Limit reached. Upgrade to continue.",
+    //   });
     // }
 
     const response = await AI.chat.completions.create({
@@ -88,9 +86,9 @@ export const generateBlogTitle = async (req, res) => {
     const content = response.choices?.[0]?.message?.content || "";
 
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, ${prompt}, ${content}, 'blog-title')
-    `;
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, ${prompt}, ${content}, 'blog-title')
+    `;
 
     if (plan !== "premium") {
       await clerkClient.users.updateUserMetadata(userId, {
@@ -116,10 +114,10 @@ export const generateImage = async (req, res) => {
     const plan = req.plan;
 
     // if (plan !== "premium") {
-    //   return res.json({
-    //     success: false,
-    //     message: "This feature is only available for premium subscriptions",
-    //   });
+    //   return res.json({
+    //     success: false,
+    //     message: "This feature is only available for premium subscriptions",
+    //   });
     // }
 
     // convert publish to boolean
@@ -152,9 +150,9 @@ export const generateImage = async (req, res) => {
     const secure_url = uploadRes.secure_url;
 
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type, publish)
-      VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publishValue})
-    `;
+     INSERT INTO creations (user_id, prompt, content, type, publish)
+     VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publishValue})
+     `;
 
     return res.json({ success: true, content: secure_url });
   } catch (error) {
@@ -173,10 +171,10 @@ export const removeImageBackground = async (req, res) => {
     const plan = req.plan;
 
     // if (plan !== "premium") {
-    //   return res.json({
-    //     success: false,
-    //     message: "This feature is only available for premium subscriptions",
-    //   });
+    //   return res.json({
+    //     success: false,
+    //     message: "This feature is only available for premium subscriptions",
+    //   });
     // }
 
     if (!image) {
@@ -221,9 +219,9 @@ export const removeImageBackground = async (req, res) => {
     }
 
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, 'Remove Background from image', ${secure_url}, 'remove-background')
-    `;
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, 'Remove Background from image', ${secure_url}, 'remove-background')
+    `;
 
     return res.json({ success: true, content: secure_url });
   } catch (error) {
@@ -243,10 +241,10 @@ export const removeImageObject = async (req, res) => {
     const plan = req.plan;
 
     // if (plan !== "premium") {
-    //   return res.json({
-    //     success: false,
-    //     message: "This feature is only available for premium subscriptions",
-    //   });
+    //   return res.json({
+    //     success: false,
+    //     message: "This feature is only available for premium subscriptions",
+    //   });
     // }
 
     if (!image) {
@@ -288,9 +286,9 @@ export const removeImageObject = async (req, res) => {
     });
 
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type)
-      VALUES (${userId}, ${`Remove ${object} from image`}, ${imageUrl}, 'remove-object')
-    `;
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, ${`Remove ${object} from image`}, ${imageUrl}, 'remove-object')
+    `;
 
     return res.json({ success: true, content: imageUrl });
   } catch (error) {
@@ -303,31 +301,55 @@ export const resumeReview = async (req, res) => {
   try {
     const { userId } = req.auth();
     const resume = req.file;
-    const { isAllowed, plan, free_usage } = checkUsage(req);
 
-    if (!isAllowed) return res.json({ success: false, message: "Limit reached. Upgrade to continue." });
-    if (!resume || !resume.buffer) return res.json({ success: false, message: "Valid PDF resume is required." });
+    // 1. Validate File Existence
+    if (!resume || !resume.buffer) {
+      return res.status(400).json({ success: false, message: "A valid PDF resume is required." });
+    }
 
-    // ✅ FIXED: Corrected the pdf-parse-fork call
+    // 2. Check Usage Limits (ADDED 'await' here)
+    // const { isAllowed, plan, free_usage } = await checkUsage(userId);
+    // if (!isAllowed) {
+    //   return res.status(403).json({ success: false, message: "Limit reached. Upgrade to continue." });
+    // }
+
+    // 3. Extract Text
     const pdfData = await pdf(resume.buffer);
     const resumeText = pdfData.text?.trim();
 
-    if (!resumeText) return res.json({ success: false, message: "Could not extract text from PDF." });
+    if (!resumeText || resumeText.length < 100) {
+      return res.status(422).json({ success: false, message: "Resume text is too short or unreadable." });
+    }
 
+    // 4. AI Analysis
     const response = await AI.chat.completions.create({
       model: "gemini-3-flash-preview",
-      messages: [{ role: "user", content: `Review this resume and give feedback:\n\n${resumeText}` }],
-      temperature: 0.7,
-      max_tokens: 1000,
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert technical recruiter. Review the resume and provide feedback in Markdown format. Focus on: 1. Visual Layout, 2. Impact of Bullet Points (STAR method), 3. Skill Keywords, and 4. Final Score (0-100)."
+        },
+        { role: "user", content: `Review this resume:\n\n${resumeText}` }
+      ],
+      temperature: 0.4,
+      max_tokens: 1500,
     });
 
-    const content = response.choices?.[0]?.message?.content || "AI Review Failed.";
-    await sql`INSERT INTO creations (user_id, prompt, content, type) VALUES (${userId}, 'Resume Review', ${content}, 'resume-review')`;
-    await incrementUsage(userId, plan, free_usage);
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) throw new Error("AI failed to generate a response.");
+
+    // 5. Database & Usage
+    await sql`
+  INSERT INTO creations (user_id, prompt, content, type)
+  VALUES (${userId}, 'Resume Review Analysis', ${content}, 'resume-review')
+`;
+
+    // await incrementUsage(userId, plan, free_usage);
 
     return res.json({ success: true, content });
+
   } catch (error) {
     console.error("resumeReview Error:", error);
-    return res.json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
