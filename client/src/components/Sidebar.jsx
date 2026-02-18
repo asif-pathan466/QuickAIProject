@@ -1,3 +1,4 @@
+import React from "react";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   Eraser,
@@ -10,7 +11,6 @@ import {
   Image,
   LogOut,
 } from "lucide-react";
-import React from "react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
