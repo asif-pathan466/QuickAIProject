@@ -38,7 +38,7 @@ const RemoveBackground = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            // ❌ Don't set Content-Type manually
+           
           },
         }
       );

@@ -36,7 +36,7 @@ const ReviewResume = () => {
       const { data } = await axios.post("/api/ai/review-resume", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          // ❌ Don't set Content-Type manually
+          
         },
       });
 

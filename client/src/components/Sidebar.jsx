@@ -28,7 +28,7 @@ const Sidebar = ({ sidebar, setSidebar }) => {
   const { user } = useUser();
   const { signOut, openUserProfile } = useClerk();
 
-  // ✅ plan from Clerk metadata
+  
   const plan = user?.publicMetadata?.plan || "free";
 
   return (

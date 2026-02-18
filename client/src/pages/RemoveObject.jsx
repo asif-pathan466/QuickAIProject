@@ -51,7 +51,7 @@ const RemoveObject = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            // ❌ don't set Content-Type manually
+           
           },
         }
       );
