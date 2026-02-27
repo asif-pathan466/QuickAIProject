@@ -17,16 +17,6 @@ app.get("/", (req, res) => {
   res.send("hello world");
 });
 
-// app.get("/debug-plan", requireAuth(), async (req, res) => {
-//   const { userId, has } = req.auth();
-
-//   res.json({
-//     userId,
-//     primium: has({ plan: "primium" }),
-//     free: has({ plan: "Free" }),
-//   });
-// });
-
 
 // protect only this route
 app.use(requireAuth());
